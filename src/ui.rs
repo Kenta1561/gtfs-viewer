@@ -1,13 +1,15 @@
 use tui::backend::Backend;
 use tui::Frame;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Constraint, Direction, Layout, Rect, Alignment};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders};
+use tui::widgets::{Block, Borders, Paragraph};
 
-use crate::ui::Selection::*;
+use crate::ui::UIBlock::*;
+use chrono::{Local, DateTime};
+use tui::text::Text;
 
-#[derive(PartialEq)]
-pub enum Selection {
+#[derive(Copy, Clone, PartialEq)]
+pub enum UIBlock {
     SEARCH,
     STATION,
     DATE,
@@ -16,8 +18,8 @@ pub enum Selection {
     TRIP,
 }
 
-impl Selection {
-    pub fn next(&self) -> Selection {
+impl UIBlock {
+    pub fn next(&self) -> UIBlock {
         match self {
             SEARCH => STATION,
             STATION => DATE,
@@ -28,7 +30,7 @@ impl Selection {
         }
     }
 
-    pub fn previous(&self) -> Selection {
+    pub fn prev(&self) -> UIBlock {
         match self {
             SEARCH => TRIP,
             STATION => SEARCH,
@@ -39,7 +41,7 @@ impl Selection {
         }
     }
 
-    pub fn right(&self) -> Selection {
+    pub fn right(&self) -> UIBlock {
         match self {
             BOARD => TRIP,
             TRIP => SEARCH,
@@ -47,7 +49,7 @@ impl Selection {
         }
     }
 
-    pub fn left(&self) -> Selection {
+    pub fn left(&self) -> UIBlock {
         match self {
             TRIP => BOARD,
             BOARD => SEARCH,
@@ -56,8 +58,21 @@ impl Selection {
     }
 }
 
+//TODO Move App to other module?
 pub struct App {
-    pub current_block: Selection,
+    pub block_hover: UIBlock,
+    pub block_focused: Option<UIBlock>,
+    pub selected_dt: DateTime<Local>,
+}
+
+impl App {
+    pub fn new() -> App {
+        App {
+            block_hover: SEARCH,
+            block_focused: None,
+            selected_dt: Local::now(),
+        }
+    }
 }
 
 //region Left area
@@ -83,23 +98,27 @@ pub fn build_left_area<B>(app: &App, frame: &mut Frame<B>, root_area: Rect)
 fn get_search_field<'a>(app: &App) -> Block<'a> {
     get_generic_block()
         .title("Search")
-        .border_style(get_border_style(app, Selection::SEARCH))
+        .border_style(get_border_style(app, UIBlock::SEARCH))
 }
 
 fn get_station_list<'a>(app: &App) -> Block<'a> {
     get_generic_block()
         .title("Stations")
-        .border_style(get_border_style(app, Selection::STATION))
+        .border_style(get_border_style(app, UIBlock::STATION))
 }
 
-fn get_date_field<'a>(app: &App) -> Block<'a> {
-    get_generic_block()
-        .border_style(get_border_style(app, Selection::DATE))
+fn get_date_field(app: &App) -> Paragraph {
+    let text = Text::from(app.selected_dt.format("%Y-%m-%d").to_string());
+    Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL).border_style(get_border_style(app, UIBlock::DATE)))
+        .alignment(Alignment::Center)
 }
 
-fn get_time_field<'a>(app: &App) -> Block<'a> {
-    get_generic_block()
-        .border_style(get_border_style(app, Selection::TIME))
+fn get_time_field(app: &App) -> Paragraph {
+    let text = Text::from(app.selected_dt.format("%H:%M").to_string());
+    Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL).border_style(get_border_style(app, UIBlock::TIME)))
+        .alignment(Alignment::Center)
 }
 //endregion
 
@@ -108,7 +127,7 @@ pub fn build_center_block<'a>(app: &App) -> Block<'a> {
     //TODO Make toggelable between dep/arr
     get_generic_block()
         .title("Departures")
-        .border_style(get_border_style(app, Selection::BOARD))
+        .border_style(get_border_style(app, UIBlock::BOARD))
 }
 //endregion
 
@@ -116,17 +135,21 @@ pub fn build_center_block<'a>(app: &App) -> Block<'a> {
 pub fn build_right_block<'a>(app: &App) -> Block<'a> {
     get_generic_block()
         .title("Trip")
-        .border_style(get_border_style(app, Selection::TRIP))
+        .border_style(get_border_style(app, UIBlock::TRIP))
 }
 //endregion
 
 //region Utility functions
-fn get_border_style(app: &App, block: Selection) -> Style {
-    if app.current_block == block {
-        Style::default().fg(Color::Cyan)
-    } else {
-        Style::default().fg(Color::White)
+fn get_border_style(app: &App, block: UIBlock) -> Style {
+    if let Some(b) = app.block_focused {
+        if b == block {
+            return Style::default().fg(Color::Magenta)
+        }
+    } else if block ==  app.block_hover {
+        return Style::default().fg(Color::Cyan)
     }
+
+    Style::default().fg(Color::White)
 }
 
 fn get_generic_block<'a>() -> Block<'a> {

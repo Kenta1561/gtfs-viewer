@@ -8,8 +8,8 @@ use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Terminal;
 
-use crate::handler::handle_key;
-use crate::ui::{App, Selection, build_left_area, build_center_block, build_right_block};
+use crate::handler::handle_key_event;
+use crate::ui::{App, build_left_area, build_center_block, build_right_block};
 
 mod handler;
 mod ui;
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App { current_block: Selection::SEARCH };
+    let mut app = App::new();
 
     loop {
         terminal.draw(|f| {
@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
                     break;
                 }
-                c => handle_key(&mut app, &c),
+                _ => handle_key_event(&mut app, &e),
             },
             _ => {}
         }
