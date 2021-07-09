@@ -7,6 +7,7 @@ use tui::widgets::{Block, Borders, Paragraph};
 use crate::ui::UIBlock::*;
 use chrono::{Local, DateTime};
 use tui::text::Text;
+use std::borrow::Borrow;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum UIBlock {
@@ -63,6 +64,7 @@ pub struct App {
     pub block_hover: UIBlock,
     pub block_focused: Option<UIBlock>,
     pub selected_dt: DateTime<Local>,
+    pub input: String,
 }
 
 impl App {
@@ -71,6 +73,7 @@ impl App {
             block_hover: SEARCH,
             block_focused: None,
             selected_dt: Local::now(),
+            input: String::new(),
         }
     }
 }
@@ -95,10 +98,15 @@ pub fn build_left_area<B>(app: &App, frame: &mut Frame<B>, root_area: Rect)
     frame.render_widget(get_time_field(app), layout[3]);
 }
 
-fn get_search_field<'a>(app: &App) -> Block<'a> {
-    get_generic_block()
-        .title("Search")
-        .border_style(get_border_style(app, UIBlock::SEARCH))
+fn get_search_field(app: &App) -> Paragraph {
+    let text = Text::from(app.input.borrow());  //todo right func?
+    Paragraph::new(text)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .border_style(get_border_style(app, UIBlock::SEARCH))
+            .title("Search")
+        )
+        .alignment(Alignment::Left)
 }
 
 fn get_station_list<'a>(app: &App) -> Block<'a> {
@@ -118,7 +126,7 @@ fn get_time_field(app: &App) -> Paragraph {
     let text = Text::from(app.selected_dt.format("%H:%M").to_string());
     Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).border_style(get_border_style(app, UIBlock::TIME)))
-        .alignment(Alignment::Center)
+        .alignment(Alignment::Left)
 }
 //endregion
 

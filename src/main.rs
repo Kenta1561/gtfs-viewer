@@ -53,10 +53,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 _ => handle_key_event(&mut app, &e),
             },
-            _ => {}
+            _ => {},
         }
     }
-
     Ok(())
 }
-
