@@ -10,11 +10,20 @@ use tui::Terminal;
 
 use crate::handler::handle_key_event;
 use crate::ui::{App, build_left_area, build_center_block, build_right_block};
+use rusqlite::Connection;
 
 mod handler;
 mod ui;
+mod db;
+
+//TODO replace later with config field
+const DB_PATH: &str = "scripts/data.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    //DB
+    let conn = Connection::open(DB_PATH)?;
+
+    //UI
     let mut stdout = stdout();
     enable_raw_mode()?;
     execute!(stdout, EnterAlternateScreen)?;
@@ -35,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ])
                 .split(f.size());
 
-            build_left_area(&app, f, root_layout[0]);
+            build_left_area(&mut app, f, &conn,root_layout[0]).unwrap();
             let block_center = build_center_block(&app);
             let block_right = build_right_block(&app);
 

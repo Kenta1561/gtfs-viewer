@@ -1,13 +1,18 @@
+use std::borrow::Borrow;
+use std::error::Error;
+
+use chrono::{DateTime, Local};
+use rusqlite::Connection;
 use tui::backend::Backend;
 use tui::Frame;
-use tui::layout::{Constraint, Direction, Layout, Rect, Alignment};
-use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, Paragraph};
-
-use crate::ui::UIBlock::*;
-use chrono::{Local, DateTime};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::{Color, Style, Modifier};
 use tui::text::Text;
-use std::borrow::Borrow;
+use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
+
+use crate::db::get_stations;
+use crate::db::items::Stop;
+use crate::ui::UIBlock::*;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum UIBlock {
@@ -61,10 +66,17 @@ impl UIBlock {
 
 //TODO Move App to other module?
 pub struct App {
+    //Block
     pub block_hover: UIBlock,
     pub block_focused: Option<UIBlock>,
+
+    //Raw data
     pub selected_dt: DateTime<Local>,
+    pub input_change: bool,
     pub input: String,
+
+    //List states
+    pub station_list: StatefulList<Stop>,
 }
 
 impl App {
@@ -74,12 +86,95 @@ impl App {
             block_focused: None,
             selected_dt: Local::now(),
             input: String::new(),
+            input_change: true,
+            station_list: StatefulList::empty(),
         }
+    }
+
+    //region Input string manipulation
+    pub fn input_remove(&mut self) {
+        if self.input.len() > 0 {
+            self.input.truncate(self.input.len() - 1);
+        }
+    }
+
+    pub fn input_clear(&mut self) {
+        self.input.clear();
+        self.notify_input_change();
+    }
+
+    pub fn input_add(&mut self, c: char) {
+        //TODO temporary solution
+        if c.is_ascii_alphabetic() {
+            self.input.push(c);
+        }
+    }
+
+    pub fn notify_input_change(&mut self) {
+        self.input_change =  true;
+    }
+    //endregion
+}
+
+pub struct StatefulList<T> {
+    pub items: Vec<T>,
+    state: ListState,
+}
+
+//https://docs.rs/tui/0.15.0/tui/widgets/trait.StatefulWidget.html
+impl<T> StatefulList<T> {
+    fn new(items: Vec<T>) -> StatefulList<T> {
+        StatefulList {
+            items,
+            state: ListState::default(),
+        }
+    }
+
+    fn empty() -> StatefulList<T> {
+        Self::new(Vec::new())
+    }
+
+    fn set_items(&mut self, items: Vec<T>) {
+        self.items = items;
+        self.state = ListState::default();
+    }
+
+    //TODO solve: Always none!
+    pub fn next(&mut self) {
+        self.state.select(Some(
+            match self.state.selected() {
+                Some(i) => {
+                    if i < self.items.len() - 1 {
+                        i + 1
+                    } else {
+                        0
+                    }
+                },
+                None => 0,
+            }
+        ));
+    }
+
+    pub fn prev(&mut self) {
+        self.state.select(Some(
+            match self.state.selected() {
+                Some(i) => {
+                    if i == 0 {
+                        self.items.len() - 1
+                    } else {
+                        i - 1
+                    }
+                },
+                None => 0,
+            }
+        ));
     }
 }
 
 //region Left area
-pub fn build_left_area<B>(app: &App, frame: &mut Frame<B>, root_area: Rect)
+pub fn build_left_area<B>(
+    app: &mut App, frame: &mut Frame<B>, db: &Connection, root_area: Rect,
+) -> Result<(), Box<dyn Error>>
     where B: Backend
 {
     let layout = Layout::default()
@@ -93,9 +188,11 @@ pub fn build_left_area<B>(app: &App, frame: &mut Frame<B>, root_area: Rect)
         .split(root_area);
 
     frame.render_widget(get_search_field(app), layout[0]);
-    frame.render_widget(get_station_list(app), layout[1]);
+    render_station_list(app, frame, layout[1], db);
     frame.render_widget(get_date_field(app), layout[2]);
     frame.render_widget(get_time_field(app), layout[3]);
+
+    Ok(())
 }
 
 fn get_search_field(app: &App) -> Paragraph {
@@ -109,10 +206,29 @@ fn get_search_field(app: &App) -> Paragraph {
         .alignment(Alignment::Left)
 }
 
-fn get_station_list<'a>(app: &App) -> Block<'a> {
-    get_generic_block()
-        .title("Stations")
-        .border_style(get_border_style(app, UIBlock::STATION))
+fn render_station_list<B>(app: &mut App, frame: &mut Frame<B>, area: Rect, db: &Connection)
+    where B: Backend
+{
+    if app.input_change {
+        app.station_list.set_items(get_stations(db, &app.input).unwrap());
+        app.input_change = false;
+    }
+
+    let items: Vec<ListItem> = app.station_list.items.iter()
+        .map(|s| ListItem::new(s.name.as_ref()))
+        .collect();
+
+    let list = List::new(items)
+        .block(get_generic_block(app, UIBlock::STATION, Some("Stations")))
+        .style(Style::default().fg(Color::White))
+        .highlight_symbol(">>")
+        .highlight_style(
+            Style::default()
+                .fg(Color::Magenta)
+                .add_modifier(Modifier::BOLD)
+        );
+
+    frame.render_stateful_widget(list, area, &mut app.station_list.state);
 }
 
 fn get_date_field(app: &App) -> Paragraph {
@@ -126,24 +242,20 @@ fn get_time_field(app: &App) -> Paragraph {
     let text = Text::from(app.selected_dt.format("%H:%M").to_string());
     Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).border_style(get_border_style(app, UIBlock::TIME)))
-        .alignment(Alignment::Left)
+        .alignment(Alignment::Center)
 }
 //endregion
 
 //region Center area
 pub fn build_center_block<'a>(app: &App) -> Block<'a> {
     //TODO Make toggelable between dep/arr
-    get_generic_block()
-        .title("Departures")
-        .border_style(get_border_style(app, UIBlock::BOARD))
+    get_generic_block(app, UIBlock::BOARD, Some("Departures"))
 }
 //endregion
 
 //region Right area
 pub fn build_right_block<'a>(app: &App) -> Block<'a> {
-    get_generic_block()
-        .title("Trip")
-        .border_style(get_border_style(app, UIBlock::TRIP))
+    get_generic_block(app, UIBlock::TRIP, Some("Trip"))
 }
 //endregion
 
@@ -151,17 +263,23 @@ pub fn build_right_block<'a>(app: &App) -> Block<'a> {
 fn get_border_style(app: &App, block: UIBlock) -> Style {
     if let Some(b) = app.block_focused {
         if b == block {
-            return Style::default().fg(Color::Magenta)
+            return Style::default().fg(Color::Magenta);
         }
-    } else if block ==  app.block_hover {
-        return Style::default().fg(Color::Cyan)
+    } else if block == app.block_hover {
+        return Style::default().fg(Color::Cyan);
     }
 
     Style::default().fg(Color::White)
 }
 
-fn get_generic_block<'a>() -> Block<'a> {
-    Block::default()
+fn get_generic_block<'a>(app: &App, block: UIBlock, title: Option<&'a str>) -> Block<'a> {
+    let block = Block::default()
         .borders(Borders::ALL)
+        .border_style(get_border_style(app, block));
+
+    match title {
+        Some(t) => block.title(t),
+        None => block
+    }
 }
 //endregion

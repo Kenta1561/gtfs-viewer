@@ -1,14 +1,8 @@
 use chrono::{Duration, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crossterm::execute;
 
 use crate::App;
 use crate::ui::UIBlock;
-use tui::backend::{Backend, CrosstermBackend};
-use crossterm::cursor::{Show, Hide, DisableBlinking, EnableBlinking};
-use std::io::Stdout;
-use std::error::Error;
-use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 pub fn handle_key_event(app: &mut App, event: &KeyEvent) {
     match event.code {
@@ -27,13 +21,13 @@ fn handle_global_key(app: &mut App, event: &KeyEvent) {
         //Direction
         KeyCode::Down | KeyCode::Char('j') => {
             app.block_hover = app.block_hover.next()
-        },
+        }
         KeyCode::Up | KeyCode::Char('k') => {
             app.block_hover = app.block_hover.prev();
-        },
+        }
         KeyCode::Left | KeyCode::Char('h') => {
             app.block_hover = app.block_hover.left();
-        },
+        }
         KeyCode::Right | KeyCode::Char('l') => {
             app.block_hover = app.block_hover.right();
         },
@@ -41,7 +35,7 @@ fn handle_global_key(app: &mut App, event: &KeyEvent) {
         KeyCode::Enter => {
             app.block_focused = Some(app.block_hover);
         },
-        _ => {},
+        _ => {}
     }
 }
 
@@ -50,7 +44,16 @@ fn handle_block_key(app: &mut App, block: &UIBlock, event: &KeyEvent) {
         UIBlock::DATE => handle_date(app, event),
         UIBlock::TIME => handle_time(app, event),
         UIBlock::SEARCH => handle_search(app, event),
-        _ => {},
+        UIBlock::STATION => handle_station(app, event),
+        _ => {}
+    }
+}
+
+fn handle_station(app: &mut App, event: &KeyEvent) {
+    match event.code {
+        KeyCode::Down => app.station_list.next(),
+        KeyCode::Up => app.station_list.prev(),
+        _ => {}
     }
 }
 
@@ -70,7 +73,7 @@ fn handle_time(app: &mut App, event: &KeyEvent) {
         }
         KeyCode::Right | KeyCode::Char('l') => {
             app.selected_dt + get_modified_duration(&event.modifiers)
-        },
+        }
         KeyCode::Char('n') => Local::now(),
         _ => app.selected_dt,
     }
@@ -85,16 +88,18 @@ fn get_modified_duration(modifiers: &KeyModifiers) -> Duration {
 fn handle_search(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Backspace => {
-            if app.input.len() > 0 {
-                app.input.remove(app.input.len() - 1);
+            app.input_remove();
+        }
+        KeyCode::Char(c) => {
+            if c == 'u' && event.modifiers.contains(KeyModifiers::CONTROL) {
+                app.input_clear();
+            } else {
+                app.input_add(c);
             }
-        },
-        KeyCode::Enter => unimplemented!(),
-        KeyCode::Char(c) => handle_letter_input(app, c),
+        }
+        KeyCode::Enter => {
+            app.notify_input_change();
+        }
         _ => {}
     }
-}
-
-fn handle_letter_input(app: &mut App, c: char) {
-    app.input.push(c);
 }
