@@ -9,8 +9,11 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::Terminal;
 
 use crate::handler::handle_key_event;
-use crate::ui::{App, build_left_area, build_center_block, build_right_block};
+use crate::ui::App;
 use rusqlite::Connection;
+use crate::ui::menu::build_menu;
+use crate::ui::board::build_board;
+use crate::ui::trip::build_trip;
 
 mod handler;
 mod ui;
@@ -44,13 +47,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ])
                 .split(f.size());
 
-            build_left_area(&mut app, f, &conn,root_layout[0]).unwrap();
-            let block_center = build_center_block(&app);
-            let block_right = build_right_block(&app);
-
-            //f.render_widget(block_left, root_layout[0]);
-            f.render_widget(block_center, root_layout[1]);
-            f.render_widget(block_right, root_layout[2]);
+            build_menu(&mut app, f, &conn,root_layout[0]).unwrap();
+            build_board(&mut app, f, root_layout[1]);
+            build_trip(&mut app, f, root_layout[2]);
         })?;
 
         match read()? {
