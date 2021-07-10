@@ -11,4 +11,5 @@ crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
 
 # Backend
+rusqlite = "0.25.3"
 chrono = "0.4.19"
