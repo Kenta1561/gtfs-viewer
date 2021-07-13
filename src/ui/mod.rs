@@ -1,8 +1,8 @@
 use chrono::{DateTime, Local};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, ListState, TableState};
+use tui::widgets::{Block, Borders, ListState, TableState, Row};
 
-use crate::db::types::Station;
+use crate::db::types::{Station, Stop};
 use crate::ui::UIBlock::*;
 
 pub mod menu;
@@ -59,6 +59,25 @@ impl UIBlock {
     }
 }
 
+//combine trigger and its target
+pub struct DependentWidget<I, S, T>
+where S: WidgetState {
+    pub trigger: T,
+    pub widget: StatefulView<I, S>,
+    pub changed: bool,
+}
+
+impl<I, S, T> DependentWidget<I, S, T>
+where S: WidgetState {
+    pub fn empty(trigger: T) -> DependentWidget<I, S, T> {
+        DependentWidget {
+            trigger,
+            widget: StatefulView::empty(),
+            changed: true,  //true for initialization
+        }
+    }
+}
+
 pub struct App {
     //Block
     pub block_hover: UIBlock,
@@ -66,11 +85,10 @@ pub struct App {
 
     //Raw data
     pub selected_dt: DateTime<Local>,
-    pub input_change: bool,
-    pub input: String,
 
-    //List states
-    pub station_list: StatefulView<Station, ListState>,
+    //Stateful views
+    pub station_list: DependentWidget<Station, ListState, String>,
+    pub board_table: StatefulView<Stop, TableState>,
 }
 
 impl App {
@@ -79,35 +97,10 @@ impl App {
             block_hover: SEARCH,
             block_focused: None,
             selected_dt: Local::now(),
-            input: String::new(),
-            input_change: true,
-            station_list: StatefulView::empty(),
+            station_list: DependentWidget::empty(String::new()),
+            board_table: StatefulView::empty(),
         }
     }
-
-    //region Input string manipulation
-    pub fn input_remove(&mut self) {
-        if self.input.len() > 0 {
-            self.input.truncate(self.input.len() - 1);
-        }
-    }
-
-    pub fn input_clear(&mut self) {
-        self.input.clear();
-        self.notify_input_change();
-    }
-
-    pub fn input_add(&mut self, c: char) {
-        //TODO temporary solution
-        if c.is_ascii_alphabetic() {
-            self.input.push(c);
-        }
-    }
-
-    pub fn notify_input_change(&mut self) {
-        self.input_change =  true;
-    }
-    //endregion
 }
 
 pub trait WidgetState: Default {
