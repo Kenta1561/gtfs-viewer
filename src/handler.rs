@@ -39,20 +39,22 @@ fn handle_global_key(app: &mut App, event: &KeyEvent) {
     }
 }
 
+//TODO improve pattern matching
 fn handle_block_key(app: &mut App, block: &UIBlock, event: &KeyEvent) {
     match block {
         UIBlock::DATE => handle_date(app, event),
         UIBlock::TIME => handle_time(app, event),
         UIBlock::SEARCH => handle_search(app, event),
         UIBlock::STATION => handle_station(app, event),
+        UIBlock::BOARD => handle_board(app, event),
         _ => {}
     }
 }
 
 fn handle_station(app: &mut App, event: &KeyEvent) {
     match event.code {
-        KeyCode::Down => app.station_list.next(),
-        KeyCode::Up => app.station_list.prev(),
+        KeyCode::Down => app.station_list.widget.next(),
+        KeyCode::Up => app.station_list.widget.prev(),
         _ => {}
     }
 }
@@ -88,18 +90,26 @@ fn get_modified_duration(modifiers: &KeyModifiers) -> Duration {
 fn handle_search(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Backspace => {
-            app.input_remove();
-        }
+            app.station_list.trigger.remove(app.station_list.trigger.len() - 1);
+        },
         KeyCode::Char(c) => {
             if c == 'u' && event.modifiers.contains(KeyModifiers::CONTROL) {
-                app.input_clear();
+                app.station_list.trigger.clear();
             } else {
-                app.input_add(c);
+                app.station_list.trigger.push(c);
             }
         }
         KeyCode::Enter => {
-            app.notify_input_change();
+            app.station_list.changed = true;
         }
         _ => {}
+    }
+}
+
+fn handle_board(app: &mut App, event: &KeyEvent) {
+    match event.code {
+        KeyCode::Down => app.board_table.next(),
+        KeyCode::Up => app.board_table.prev(),
+        _ => {},
     }
 }

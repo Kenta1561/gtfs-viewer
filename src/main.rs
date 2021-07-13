@@ -14,6 +14,7 @@ use rusqlite::Connection;
 use crate::ui::menu::build_menu;
 use crate::ui::board::build_board;
 use crate::ui::trip::build_trip;
+use crate::db::{GTFSDatabase, fetch_services};
 
 mod handler;
 mod ui;
@@ -24,7 +25,7 @@ const DB_PATH: &str = "scripts/data.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
     //DB
-    let conn = Connection::open(DB_PATH)?;
+    let db = GTFSDatabase::new(DB_PATH)?;
 
     //UI
     let mut stdout = stdout();
@@ -47,8 +48,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ])
                 .split(f.size());
 
-            build_menu(&mut app, f, &conn,root_layout[0]).unwrap();
-            build_board(&mut app, f, root_layout[1]);
+            build_menu(&mut app, f, &db,root_layout[0]).unwrap();
+            build_board(&mut app, f, &db, root_layout[1]);
             build_trip(&mut app, f, root_layout[2]);
         })?;
 
