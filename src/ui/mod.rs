@@ -106,7 +106,7 @@ impl WidgetState for TableState {
 
 pub struct StatefulView<T, S: WidgetState> {
     pub items: Vec<T>,
-    state: S,
+    pub state: S,
 }
 
 impl<T, S: WidgetState> StatefulView<T, S> {
@@ -167,7 +167,7 @@ pub struct App {
 
     //Stateful views
     pub station_list: DependentView<Station, ListState, String>,
-    pub board_table: StatefulView<Stop, TableState>,
+    pub board_table: DependentView<Stop, TableState, String>,
 }
 
 impl App {
@@ -177,7 +177,7 @@ impl App {
             block_focused: None,
             selected_dt: Local::now(),
             station_list: DependentView::empty(String::new()),
-            board_table: StatefulView::empty(),
+            board_table: DependentView::empty(String::new()),
         }
     }
 }

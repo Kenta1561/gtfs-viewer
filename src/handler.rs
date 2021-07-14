@@ -51,10 +51,23 @@ fn handle_block_key(app: &mut App, block: &UIBlock, event: &KeyEvent) {
     }
 }
 
+//TODO temporary, make generic?
 fn handle_station(app: &mut App, event: &KeyEvent) {
     match event.code {
-        KeyCode::Down => app.station_list.widget.next(),
-        KeyCode::Up => app.station_list.widget.prev(),
+        KeyCode::Down => {
+            app.station_list.widget.next();
+            let selected_index = app.station_list.widget.state.selected().unwrap();
+            let selected_item = app.station_list.widget.items.get(selected_index).unwrap();
+            app.board_table.trigger = selected_item.stop_id.to_string();
+            app.board_table.changed = true;
+        },
+        KeyCode::Up => {
+            app.station_list.widget.prev();
+            let selected_index = app.station_list.widget.state.selected().unwrap();
+            let selected_item = app.station_list.widget.items.get(selected_index).unwrap();
+            app.board_table.trigger = selected_item.stop_id.to_string();
+            app.board_table.changed = true;
+        },
         _ => {}
     }
 }
@@ -108,8 +121,8 @@ fn handle_search(app: &mut App, event: &KeyEvent) {
 
 fn handle_board(app: &mut App, event: &KeyEvent) {
     match event.code {
-        KeyCode::Down => app.board_table.next(),
-        KeyCode::Up => app.board_table.prev(),
+        KeyCode::Down => app.board_table.widget.next(),
+        KeyCode::Up => app.board_table.widget.prev(),
         _ => {},
     }
 }
