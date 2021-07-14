@@ -77,6 +77,13 @@ impl<I, S, T> DependentView<I, S, T>
             changed: true,  //true for initialization
         }
     }
+
+    pub fn get_selected_item(&self) -> Option<&I> {
+        if let Some(i) = self.widget.state.selected() {
+            return self.widget.items.get(i)
+        }
+        None
+    }
 }
 
 pub trait WidgetState: Default {
@@ -126,6 +133,7 @@ impl<T, S: WidgetState> StatefulView<T, S> {
         self.state = S::default();
     }
 
+    //region Navigation
     pub fn next(&mut self) {
         self.state.select(Some(
             match self.state.selected() {
@@ -155,6 +163,15 @@ impl<T, S: WidgetState> StatefulView<T, S> {
             }
         ));
     }
+
+    pub fn start(&mut self) {
+        self.state.select(Some(0));
+    }
+
+    pub fn end(&mut self) {
+        self.state.select(Some(self.items.len() - 1));
+    }
+    //endregion
 }
 
 pub struct App {
