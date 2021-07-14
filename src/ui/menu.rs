@@ -35,7 +35,7 @@ pub fn build_menu<B>(
 }
 
 fn get_search_field(app: &App) -> Paragraph {
-    let text = Text::from(app.station_list.trigger.borrow());  //todo right func?
+    let text = Text::from(app.stations.trigger.borrow());  //todo right func?
     Paragraph::new(text)
         .block(Block::default()
             .borders(Borders::ALL)
@@ -50,12 +50,12 @@ fn render_station_list<B>(
 )
     where B: Backend
 {
-    if app.station_list.changed {
-        app.station_list.widget.set_items(db.fetch_stations(&app.station_list.trigger).unwrap());
-        app.station_list.changed = false;
+    if app.stations.changed {
+        app.stations.widget.set_items(db.fetch_stations(&app.stations.trigger).unwrap());
+        app.stations.changed = false;
     }
 
-    let items: Vec<ListItem> = app.station_list.widget.items.iter()
+    let items: Vec<ListItem> = app.stations.widget.items.iter()
         .map(|s| ListItem::new(s.name.as_ref()))
         .collect();
 
@@ -69,7 +69,7 @@ fn render_station_list<B>(
                 .add_modifier(Modifier::BOLD)
         );
 
-    frame.render_stateful_widget(list, area, &mut app.station_list.widget.state);
+    frame.render_stateful_widget(list, area, &mut app.stations.widget.state);
 }
 
 fn get_date_field(app: &App) -> Paragraph {

@@ -2,21 +2,21 @@ use chrono::{Duration, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::App;
-use crate::ui::UIBlock;
+use crate::ui::{UIBlock, DependentView, ViewState};
 
 pub fn handle_key_event(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Esc => {
             app.block_focused = None;
-        },
+        }
         _ => match app.block_focused {
-            Some(b) => handle_block_key(app, &b, event),
-            None => handle_global_key(app, event),
+            Some(b) => handle_block_nav(app, &b, event),
+            None => handle_global_nav(app, event),
         },
     }
 }
 
-fn handle_global_key(app: &mut App, event: &KeyEvent) {
+fn handle_global_nav(app: &mut App, event: &KeyEvent) {
     match event.code {
         //Direction
         KeyCode::Down | KeyCode::Char('j') => {
@@ -30,17 +30,17 @@ fn handle_global_key(app: &mut App, event: &KeyEvent) {
         }
         KeyCode::Right | KeyCode::Char('l') => {
             app.block_hover = app.block_hover.right();
-        },
+        }
         //Selection
         KeyCode::Enter => {
             app.block_focused = Some(app.block_hover);
-        },
+        }
         _ => {}
     }
 }
 
 //TODO improve pattern matching
-fn handle_block_key(app: &mut App, block: &UIBlock, event: &KeyEvent) {
+fn handle_block_nav(app: &mut App, block: &UIBlock, event: &KeyEvent) {
     match block {
         UIBlock::DATE => handle_date(app, event),
         UIBlock::TIME => handle_time(app, event),
@@ -51,6 +51,19 @@ fn handle_block_key(app: &mut App, block: &UIBlock, event: &KeyEvent) {
     }
 }
 
+fn handle_scroll_nav<I, S, T>(view: &mut DependentView<I, S, T>, code: &KeyCode)
+    where S: ViewState
+{
+    match code {
+        KeyCode::Down | KeyCode::Char('j') => view.widget.next(),
+        KeyCode::Up | KeyCode::Char('k') => view.widget.prev(),
+        KeyCode::Home => view.widget.start(),
+        KeyCode::End => view.widget.end(),
+        _ => {}
+    }
+}
+
+//region Menu
 fn handle_date(app: &mut App, event: &KeyEvent) {
     app.selected_dt = match event.code {
         KeyCode::Left | KeyCode::Char('h') => app.selected_dt - Duration::days(1),
@@ -82,17 +95,17 @@ fn get_modified_duration(modifiers: &KeyModifiers) -> Duration {
 fn handle_search(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Backspace => {
-            app.station_list.trigger.remove(app.station_list.trigger.len() - 1);
-        },
+            app.stations.trigger.remove(app.stations.trigger.len() - 1);
+        }
         KeyCode::Char(c) => {
             if c == 'u' && event.modifiers.contains(KeyModifiers::CONTROL) {
-                app.station_list.trigger.clear();
+                app.stations.trigger.clear();
             } else {
-                app.station_list.trigger.push(c);
+                app.stations.trigger.push(c);
             }
         }
         KeyCode::Enter => {
-            app.station_list.changed = true;
+            app.stations.changed = true;
         }
         _ => {}
     }
@@ -101,24 +114,14 @@ fn handle_search(app: &mut App, event: &KeyEvent) {
 //TODO temporary, make generic?
 fn handle_station(app: &mut App, event: &KeyEvent) {
     match event.code {
-        KeyCode::Down => app.station_list.widget.next(),
-        KeyCode::Up => app.station_list.widget.prev(),
-        KeyCode::Enter => {
-            let selected_index = app.station_list.widget.state.selected().unwrap();
-            let selected_item = app.station_list.widget.items.get(selected_index).unwrap();
-            app.board_table.trigger = selected_item.stop_id.to_string();
-            app.board_table.changed = true;
-        },
-        _ => {}
+        KeyCode::Enter => app.update_board(),
+        x => handle_scroll_nav(&mut app.stations, &x)
     }
 }
+//endregion
 
 fn handle_board(app: &mut App, event: &KeyEvent) {
     match event.code {
-        KeyCode::Down => app.board_table.widget.next(),
-        KeyCode::Up => app.board_table.widget.prev(),
-        KeyCode::Home => app.board_table.widget.start(),
-        KeyCode::End => app.board_table.widget.end(),
-        _ => {},
+        x => handle_scroll_nav(&mut app.board, &x)
     }
 }

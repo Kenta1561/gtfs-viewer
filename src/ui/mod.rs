@@ -60,7 +60,7 @@ impl UIBlock {
 }
 
 pub struct DependentView<I, S, T>
-    where S: WidgetState
+    where S: ViewState
 {
     pub trigger: T,
     pub widget: StatefulView<I, S>,
@@ -68,7 +68,7 @@ pub struct DependentView<I, S, T>
 }
 
 impl<I, S, T> DependentView<I, S, T>
-    where S: WidgetState
+    where S: ViewState
 {
     pub fn empty(trigger: T) -> DependentView<I, S, T> {
         DependentView {
@@ -86,12 +86,12 @@ impl<I, S, T> DependentView<I, S, T>
     }
 }
 
-pub trait WidgetState: Default {
+pub trait ViewState: Default {
     fn select(&mut self, index: Option<usize>);
     fn selected(&self) -> Option<usize>;
 }
 
-impl WidgetState for ListState {
+impl ViewState for ListState {
     fn select(&mut self, index: Option<usize>) {
         self.select(index);
     }
@@ -101,7 +101,7 @@ impl WidgetState for ListState {
     }
 }
 
-impl WidgetState for TableState {
+impl ViewState for TableState {
     fn select(&mut self, index: Option<usize>) {
         self.select(index);
     }
@@ -111,12 +111,12 @@ impl WidgetState for TableState {
     }
 }
 
-pub struct StatefulView<T, S: WidgetState> {
+pub struct StatefulView<T, S: ViewState> {
     pub items: Vec<T>,
     pub state: S,
 }
 
-impl<T, S: WidgetState> StatefulView<T, S> {
+impl<T, S: ViewState> StatefulView<T, S> {
     fn new(items: Vec<T>) -> StatefulView<T, S> {
         StatefulView {
             items,
@@ -131,6 +131,14 @@ impl<T, S: WidgetState> StatefulView<T, S> {
     fn set_items(&mut self, items: Vec<T>) {
         self.items = items;
         self.state = S::default();
+    }
+
+    fn get_selected_item(&self) -> Option<&T> {
+        if let Some(i) = self.state.selected() {
+            self.items.get(i)
+        } else {
+            None
+        }
     }
 
     //region Navigation
@@ -183,8 +191,8 @@ pub struct App {
     pub selected_dt: DateTime<Local>,
 
     //Stateful views
-    pub station_list: DependentView<Station, ListState, String>,
-    pub board_table: DependentView<Stop, TableState, String>,
+    pub stations: DependentView<Station, ListState, String>,
+    pub board: DependentView<Stop, TableState, String>,
 }
 
 impl App {
@@ -193,9 +201,15 @@ impl App {
             block_hover: SEARCH,
             block_focused: None,
             selected_dt: Local::now(),
-            station_list: DependentView::empty(String::new()),
-            board_table: DependentView::empty(String::new()),
+            stations: DependentView::empty(String::new()),
+            board: DependentView::empty(String::new()),
         }
+    }
+
+    pub fn update_board(&mut self) {
+        let selected_item = self.stations.get_selected_item().unwrap();
+        self.board.trigger = selected_item.stop_id.to_string();
+        self.board.changed = true;
     }
 }
 
