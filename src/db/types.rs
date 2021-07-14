@@ -1,7 +1,8 @@
 use bitflags::bitflags;
-use chrono::{NaiveDate, NaiveDateTime, Datelike, Duration};
+use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
+
 use crate::db::types::BoardType::{ARRIVAL, DEPARTURE};
-use crate::db::types::ExceptionType::{ADDED, REMOVED, NONE};
+use crate::db::types::ExceptionType::{ADDED, NONE, REMOVED};
 
 //region Simple types
 pub struct Station {

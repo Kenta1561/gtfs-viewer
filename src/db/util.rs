@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, ParseResult, Duration};
+use chrono::{Duration, NaiveDate, ParseResult};
 use regex::Regex;
 
 const DATE_FORMAT: &str = "%Y%m%d";

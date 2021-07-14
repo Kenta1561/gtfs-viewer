@@ -8,13 +8,12 @@ use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Terminal;
 
+use crate::db::GTFSDatabase;
 use crate::handler::handle_key_event;
 use crate::ui::App;
-use rusqlite::Connection;
-use crate::ui::menu::build_menu;
 use crate::ui::board::build_board;
+use crate::ui::menu::build_menu;
 use crate::ui::trip::build_trip;
-use crate::db::{GTFSDatabase, fetch_services};
 
 mod handler;
 mod ui;

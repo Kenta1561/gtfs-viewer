@@ -1,7 +1,8 @@
-use crate::ui::{get_generic_block, UIBlock, App};
+use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::Rect;
-use tui::backend::Backend;
+
+use crate::ui::{App, get_generic_block, UIBlock};
 
 pub fn build_trip<B>(app: &App, frame: &mut Frame<B>, area: Rect)
     where B: Backend

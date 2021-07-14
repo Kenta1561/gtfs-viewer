@@ -1,12 +1,14 @@
-use rusqlite::{Connection, Result};
-use crate::db::types::{Station, Service, ServiceException, Weekday, BoardType, Stop};
-use crate::db::queries::{get_station_query, SERVICE_QUERY, STOP_QUERY};
 use std::collections::HashMap;
 use std::error::Error;
-use chrono::{NaiveDateTime, Duration};
-use regex::Regex;
-use crate::db::util::{str_to_date, str_to_dur};
 use std::time::Instant;
+
+use chrono::{Duration, NaiveDateTime};
+use regex::Regex;
+use rusqlite::{Connection, Result};
+
+use crate::db::queries::{get_station_query, SERVICE_QUERY, STOP_QUERY};
+use crate::db::types::{BoardType, Service, ServiceException, Station, Stop, Weekday};
+use crate::db::util::{str_to_date, str_to_dur};
 
 mod queries;
 mod util;
