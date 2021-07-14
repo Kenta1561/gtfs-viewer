@@ -20,10 +20,12 @@ pub fn build_board<B>(
         app.board_table.widget.items = db.fetch_stops(
             &app.board_table.trigger,
             BoardType::DEPARTURE,
-            Local::now().naive_local(),
+            app.selected_dt.naive_local(),
         )?;
         app.board_table.changed = false;
     }
+
+    let title = app.station_list.get_selected_item().map(|s| s.name.as_str());
 
     let rows: Vec<Row> = app.board_table.widget.items.iter()
         .map(|s| Row::new(vec![
@@ -41,7 +43,7 @@ pub fn build_board<B>(
         )
         .highlight_style(Style::default().fg(Color::Magenta))
         .highlight_symbol(">>")
-        .block(get_generic_block(app, UIBlock::BOARD, Some("Departures")))
+        .block(get_generic_block(app, UIBlock::BOARD, title))
         .widths(&[
             Constraint::Percentage(20),
             Constraint::Percentage(50),
