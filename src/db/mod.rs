@@ -24,11 +24,10 @@ impl GTFSDatabase {
 
     pub fn new(db_path: &str) -> Result<GTFSDatabase, Box<dyn Error>> {
         let db = Connection::open(db_path)?;
-        //todo service fetching disabled for fast debug
-        //let services = fetch_services(&db)?;
+        let services = fetch_services(&db)?;
         Ok(GTFSDatabase {
             db,
-            services: HashMap::new(),
+            services,
             time_regex: Regex::new(r"(?P<hours>\d{1,2}):(?P<minutes>\d{2}):(?P<seconds>\d{2})")?,
         })
     }
@@ -56,6 +55,7 @@ impl GTFSDatabase {
                 trip_id: row.get(2)?,
                 short_name: row.get(4)?,
                 service_id: row.get(3)?,
+                headsign: row.get(5)?,
             })
         })?;
 
@@ -66,13 +66,10 @@ impl GTFSDatabase {
             ))
             // F1: Apply time filter
             .filter(|s| s.is_after_adjusted_time(&board_type, &date_time))
-            //todo: line below for testing, remove later
-            .take(100)
             .collect();
 
         stops.sort_by(|a, b| a.get_adjusted_dt(&board_type, &date_time).cmp(
-            &b.get_adjusted_dt(&board_type, &date_time)
-        ));
+            &b.get_adjusted_dt(&board_type, &date_time)));
 
         Ok(stops)
     }

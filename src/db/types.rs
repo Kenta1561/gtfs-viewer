@@ -78,6 +78,7 @@ pub struct Stop {
     //tmp
     pub short_name: String,
     pub service_id: u16,
+    pub headsign: String,
 }
 
 impl Stop {
