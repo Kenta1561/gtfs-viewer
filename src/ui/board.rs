@@ -16,18 +16,18 @@ pub fn build_board<B>(
 ) -> Result<(), Box<dyn Error>>
     where B: Backend
 {
-    if app.board_table.changed {
-        app.board_table.widget.items = db.fetch_stops(
-            &app.board_table.trigger,
+    if app.board.changed {
+        app.board.widget.items = db.fetch_stops(
+            &app.board.trigger,
             BoardType::DEPARTURE,
             app.selected_dt.naive_local(),
         )?;
-        app.board_table.changed = false;
+        app.board.changed = false;
     }
 
-    let title = app.station_list.get_selected_item().map(|s| s.name.as_str());
+    let title = app.stations.get_selected_item().map(|s| s.name.as_str());
 
-    let rows: Vec<Row> = app.board_table.widget.items.iter()
+    let rows: Vec<Row> = app.board.widget.items.iter()
         .map(|s| Row::new(vec![
             s.short_name.to_string(),
             s.headsign.to_string(),
@@ -51,7 +51,7 @@ pub fn build_board<B>(
             Constraint::Percentage(15),
         ]);
 
-    frame.render_stateful_widget(table, area, &mut app.board_table.widget.state);
+    frame.render_stateful_widget(table, area, &mut app.board.widget.state);
 
     Ok(())
 }
