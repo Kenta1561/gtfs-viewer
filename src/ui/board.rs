@@ -1,8 +1,6 @@
-use std::collections::HashMap;
 use std::error::Error;
 
-use chrono::{Local, NaiveDateTime, Duration};
-use rusqlite::Connection;
+use chrono::Duration;
 use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::{Constraint, Rect};
@@ -10,7 +8,7 @@ use tui::style::{Color, Style};
 use tui::widgets::{Row, Table};
 
 use crate::db::GTFSDatabase;
-use crate::db::types::{BoardType, Stop};
+use crate::db::types::Stop;
 use crate::ui::{App, get_generic_block, UIBlock};
 
 pub fn build_board<B>(

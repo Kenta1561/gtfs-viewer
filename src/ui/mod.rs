@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, ListState, TableState, Row};
+use tui::widgets::{Block, Borders, ListState, Row, TableState};
 
 use crate::db::types::{Station, Stop};
 use crate::ui::UIBlock::*;
@@ -59,46 +59,22 @@ impl UIBlock {
     }
 }
 
-//combine trigger and its target
-pub struct DependentWidget<I, S, T>
-where S: WidgetState {
+pub struct DependentView<I, S, T>
+    where S: WidgetState
+{
     pub trigger: T,
     pub widget: StatefulView<I, S>,
     pub changed: bool,
 }
 
-impl<I, S, T> DependentWidget<I, S, T>
-where S: WidgetState {
-    pub fn empty(trigger: T) -> DependentWidget<I, S, T> {
-        DependentWidget {
+impl<I, S, T> DependentView<I, S, T>
+    where S: WidgetState
+{
+    pub fn empty(trigger: T) -> DependentView<I, S, T> {
+        DependentView {
             trigger,
             widget: StatefulView::empty(),
             changed: true,  //true for initialization
-        }
-    }
-}
-
-pub struct App {
-    //Block
-    pub block_hover: UIBlock,
-    pub block_focused: Option<UIBlock>,
-
-    //Raw data
-    pub selected_dt: DateTime<Local>,
-
-    //Stateful views
-    pub station_list: DependentWidget<Station, ListState, String>,
-    pub board_table: StatefulView<Stop, TableState>,
-}
-
-impl App {
-    pub fn new() -> App {
-        App {
-            block_hover: SEARCH,
-            block_focused: None,
-            selected_dt: Local::now(),
-            station_list: DependentWidget::empty(String::new()),
-            board_table: StatefulView::empty(),
         }
     }
 }
@@ -159,7 +135,7 @@ impl<T, S: WidgetState> StatefulView<T, S> {
                     } else {
                         0
                     }
-                },
+                }
                 None => 0,
             }
         ));
@@ -174,13 +150,39 @@ impl<T, S: WidgetState> StatefulView<T, S> {
                     } else {
                         i - 1
                     }
-                },
+                }
                 None => 0,
             }
         ));
     }
 }
 
+pub struct App {
+    //Block
+    pub block_hover: UIBlock,
+    pub block_focused: Option<UIBlock>,
+
+    //Raw data
+    pub selected_dt: DateTime<Local>,
+
+    //Stateful views
+    pub station_list: DependentView<Station, ListState, String>,
+    pub board_table: StatefulView<Stop, TableState>,
+}
+
+impl App {
+    pub fn new() -> App {
+        App {
+            block_hover: SEARCH,
+            block_focused: None,
+            selected_dt: Local::now(),
+            station_list: DependentView::empty(String::new()),
+            board_table: StatefulView::empty(),
+        }
+    }
+}
+
+//region Utility methods
 fn get_border_style(app: &App, block: UIBlock) -> Style {
     if let Some(b) = app.block_focused {
         if b == block {
@@ -203,3 +205,4 @@ fn get_generic_block<'a>(app: &App, block: UIBlock, title: Option<&'a str>) -> B
         None => block
     }
 }
+//endregion

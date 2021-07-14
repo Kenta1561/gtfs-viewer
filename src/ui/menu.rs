@@ -1,15 +1,15 @@
-use tui::layout::{Rect, Constraint, Layout, Direction, Alignment};
+use std::borrow::Borrow;
+use std::error::Error;
 
-use crate::ui::{App, get_generic_block, UIBlock, get_border_style};
 use tui::backend::Backend;
 use tui::Frame;
-use std::error::Error;
-use rusqlite::Connection;
-use tui::widgets::{Paragraph, Borders, Block, ListItem, List};
-use std::borrow::Borrow;
-use tui::style::{Color, Style, Modifier};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
+use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
+
 use crate::db::GTFSDatabase;
+use crate::ui::{App, get_border_style, get_generic_block, UIBlock};
 
 pub fn build_menu<B>(
     app: &mut App, frame: &mut Frame<B>, db: &GTFSDatabase, root_area: Rect,
