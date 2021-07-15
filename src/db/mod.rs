@@ -6,13 +6,46 @@ use chrono::{Duration, NaiveDateTime};
 use regex::Regex;
 use rusqlite::{Connection, Result, Row};
 
-use crate::db::queries::{get_station_query, SERVICE_QUERY, STOP_QUERY, TRIP_QUERY};
 use crate::db::types::{BoardType, Service, ServiceException, Station, Stop, Weekday};
 use crate::db::util::{str_to_date, str_to_dur};
 
-mod queries;
 mod util;
 pub mod types;
+
+//region Queries
+const SERVICE_QUERY: &str = "SELECT s.*, se.service_date, se.exception_type \
+    FROM service s \
+    LEFT JOIN service_exception se \
+    ON se.service_id = s.service_id;";
+
+const STOP_QUERY: &str = "SELECT \
+    st.arrival_time, st.departure_time, t.trip_id, s.service_id, t.short_name, t.headsign \
+    FROM stop_time st \
+    INNER JOIN trip t ON t.trip_id = st.trip_id \
+    INNER JOIN service s ON s.service_id = t.service_id \
+    INNER JOIN route r ON r.route_id = t.route_id \
+    INNER JOIN agency a ON a.agency_id = r.agency_id
+    WHERE st.stop_id LIKE ?1;";
+
+const TRIP_QUERY: &str = "SELECT
+    st.arrival_time, st.departure_time, st.trip_id, 0, '', s.name \
+    FROM stop_time st \
+    INNER JOIN stop s on s.stop_id = st.stop_id \
+    WHERE st.trip_id = ?1 \
+    ORDER BY st.stop_sequence;";
+
+fn get_station_query(input: &str) -> String {
+    let filter = match input.is_empty() {
+        true => String::from("'%Hbf' OR name LIKE '%Hauptbahnhof'"),
+        false => format!("'%{}%'", input)
+    };
+
+    format!(
+        "SELECT MIN(stop_id), name FROM stop WHERE name LIKE {} GROUP BY name;",
+        filter
+    )
+}
+//endregion
 
 pub struct GTFSDatabase {
     db: Connection,
@@ -21,7 +54,6 @@ pub struct GTFSDatabase {
 }
 
 impl GTFSDatabase {
-
     pub fn new(db_path: &str) -> Result<GTFSDatabase, Box<dyn Error>> {
         let db = Connection::open(db_path)?;
         let services = fetch_services(&db)?;
@@ -47,21 +79,29 @@ impl GTFSDatabase {
     pub fn fetch_stops(
         &self, stop_id: &str, board_type: BoardType, date_time: NaiveDateTime,
     ) -> Result<Vec<Stop>, Box<dyn Error>> {
-        let mut stmt = self.db.prepare(STOP_QUERY)?;
-        let iter = stmt.query_map([stop_id], |row| self.map_stop(&row))?;
-        let mut stops: Vec<Stop> = iter.map(|s| s.unwrap())
-            // F0: Remove unavailable service
-            .filter(|s| self.services.get(&s.service_id).unwrap().is_available(
-                &(date_time.date() - Duration::days(s.arrival_time.num_days()))
-            ))
-            // F1: Apply time filter
-            .filter(|s| s.is_after_adjusted_time(&board_type, &date_time))
-            .collect();
+        if stop_id.is_empty() {
+            Ok(Vec::new())
+        } else {
+            let mut stmt = self.db.prepare(STOP_QUERY)?;
+            // let iter = stmt.query_map([stop_id], |row| self.map_stop(&row))?;
+            let iter = stmt.query_map(
+                [format!("{}%", stop_id)],
+                |row| self.map_stop(&row)
+            )?;
+            let mut stops: Vec<Stop> = iter.map(|s| s.unwrap())
+                // F0: Remove unavailable service
+                .filter(|s| self.services.get(&s.service_id).unwrap().is_available(
+                    &(date_time.date() - Duration::days(s.arrival_time.num_days()))
+                ))
+                // F1: Apply time filter
+                .filter(|s| s.is_after_adjusted_time(&board_type, &date_time))
+                .collect();
 
-        stops.sort_by(|a, b| a.get_adjusted_dt(&board_type, &date_time).cmp(
-            &b.get_adjusted_dt(&board_type, &date_time)));
+            stops.sort_by(|a, b| a.get_adjusted_dt(&board_type, &date_time).cmp(
+                &b.get_adjusted_dt(&board_type, &date_time)));
 
-        Ok(stops)
+            Ok(stops)
+        }
     }
 
     pub fn fetch_trip(&self, trip_id: u32) -> Result<Vec<Stop>, Box<dyn Error>> {
@@ -84,6 +124,7 @@ impl GTFSDatabase {
 }
 
 //Called once at startup
+//TODO: Consider lazy evaluation
 pub fn fetch_services(db: &Connection) -> Result<HashMap<u16, Service>, Box<dyn Error>> {
     let mut stmt = db.prepare(SERVICE_QUERY)?;
 
