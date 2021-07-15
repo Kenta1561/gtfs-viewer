@@ -25,3 +25,10 @@ pub(super) const STOP_QUERY: &str = "SELECT \
     INNER JOIN route r ON r.route_id = t.route_id \
     INNER JOIN agency a ON a.agency_id = r.agency_id
     WHERE st.stop_id = ?1;";
+
+pub(super) const TRIP_QUERY: &str = "SELECT
+    st.arrival_time, st.departure_time, st.trip_id, 0, '', s.name \
+    FROM stop_time st \
+    INNER JOIN stop s on s.stop_id = st.stop_id \
+    WHERE st.trip_id = ?1 \
+    ORDER BY st.stop_sequence;";

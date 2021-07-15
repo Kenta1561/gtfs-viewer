@@ -4,9 +4,9 @@ use std::time::Instant;
 
 use chrono::{Duration, NaiveDateTime};
 use regex::Regex;
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Row};
 
-use crate::db::queries::{get_station_query, SERVICE_QUERY, STOP_QUERY};
+use crate::db::queries::{get_station_query, SERVICE_QUERY, STOP_QUERY, TRIP_QUERY};
 use crate::db::types::{BoardType, Service, ServiceException, Station, Stop, Weekday};
 use crate::db::util::{str_to_date, str_to_dur};
 
@@ -48,17 +48,7 @@ impl GTFSDatabase {
         &self, stop_id: &str, board_type: BoardType, date_time: NaiveDateTime,
     ) -> Result<Vec<Stop>, Box<dyn Error>> {
         let mut stmt = self.db.prepare(STOP_QUERY)?;
-        let iter = stmt.query_map([stop_id], |row| {
-            Ok(Stop {
-                arrival_time: str_to_dur(&self.time_regex, row.get(0)?).unwrap(),
-                departure_time: str_to_dur(&self.time_regex, row.get(1)?).unwrap(),
-                trip_id: row.get(2)?,
-                short_name: row.get(4)?,
-                service_id: row.get(3)?,
-                headsign: row.get(5)?,
-            })
-        })?;
-
+        let iter = stmt.query_map([stop_id], |row| self.map_stop(&row))?;
         let mut stops: Vec<Stop> = iter.map(|s| s.unwrap())
             // F0: Remove unavailable service
             .filter(|s| self.services.get(&s.service_id).unwrap().is_available(
@@ -73,8 +63,27 @@ impl GTFSDatabase {
 
         Ok(stops)
     }
+
+    pub fn fetch_trip(&self, trip_id: u32) -> Result<Vec<Stop>, Box<dyn Error>> {
+        let mut stmt = self.db.prepare(TRIP_QUERY)?;
+        let iter = stmt.query_map([trip_id], |row| self.map_stop(&row))?;
+
+        Ok(iter.map(|s| s.unwrap()).collect())
+    }
+
+    fn map_stop(&self, row: &Row) -> Result<Stop> {
+        Ok(Stop {
+            arrival_time: str_to_dur(&self.time_regex, row.get(0)?).unwrap(),
+            departure_time: str_to_dur(&self.time_regex, row.get(1)?).unwrap(),
+            trip_id: row.get(2)?,
+            short_name: row.get(4)?,
+            service_id: row.get(3)?,
+            headsign: row.get(5)?,
+        })
+    }
 }
 
+//Called once at startup
 pub fn fetch_services(db: &Connection) -> Result<HashMap<u16, Service>, Box<dyn Error>> {
     let mut stmt = db.prepare(SERVICE_QUERY)?;
 

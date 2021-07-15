@@ -25,10 +25,11 @@ pub fn build_board<B>(
         app.board.changed = false;
     }
 
-    let title = app.stations.get_selected_item().map(|s| s.name.as_str());
+    let title = app.station.get_selected_item().map(|s| s.name.as_str());
 
     let rows: Vec<Row> = app.board.widget.items.iter()
         .map(|s| Row::new(vec![
+            s.trip_id.to_string(),
             s.short_name.to_string(),
             s.headsign.to_string(),
             s.tmp_get_adjusted_arrival(&app.selected_dt.naive_local()),
@@ -39,14 +40,15 @@ pub fn build_board<B>(
     let table = Table::new(rows)
         .style(Style::default().fg(Color::White))
         .header(
-            Row::new(vec!["Nr.", "Destination", "Arrival", "Departure"])
+            Row::new(vec!["ID", "Nr.", "Destination", "Arr.", "Dep."])
         )
         .highlight_style(Style::default().fg(Color::Magenta))
         .highlight_symbol(">>")
         .block(get_generic_block(app, UIBlock::BOARD, title))
         .widths(&[
             Constraint::Percentage(20),
-            Constraint::Percentage(50),
+            Constraint::Percentage(10),
+            Constraint::Percentage(40),
             Constraint::Percentage(15),
             Constraint::Percentage(15),
         ]);

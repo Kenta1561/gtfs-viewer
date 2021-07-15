@@ -191,8 +191,9 @@ pub struct App {
     pub selected_dt: DateTime<Local>,
 
     //Stateful views
-    pub stations: DependentView<Station, ListState, String>,
+    pub station: DependentView<Station, ListState, String>,
     pub board: DependentView<Stop, TableState, String>,
+    pub trip: DependentView<Stop, TableState, u32>,
 }
 
 impl App {
@@ -201,13 +202,14 @@ impl App {
             block_hover: SEARCH,
             block_focused: None,
             selected_dt: Local::now(),
-            stations: DependentView::empty(String::new()),
+            station: DependentView::empty(String::new()),
             board: DependentView::empty(String::new()),
+            trip: DependentView::empty(0),
         }
     }
 
     pub fn update_board(&mut self) {
-        let selected_item = self.stations.get_selected_item().unwrap();
+        let selected_item = self.station.get_selected_item().unwrap();
         self.board.trigger = selected_item.stop_id.to_string();
         self.board.changed = true;
     }

@@ -95,17 +95,17 @@ fn get_modified_duration(modifiers: &KeyModifiers) -> Duration {
 fn handle_search(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Backspace => {
-            app.stations.trigger.remove(app.stations.trigger.len() - 1);
+            app.station.trigger.remove(app.station.trigger.len() - 1);
         }
         KeyCode::Char(c) => {
             if c == 'u' && event.modifiers.contains(KeyModifiers::CONTROL) {
-                app.stations.trigger.clear();
+                app.station.trigger.clear();
             } else {
-                app.stations.trigger.push(c);
+                app.station.trigger.push(c);
             }
         }
         KeyCode::Enter => {
-            app.stations.changed = true;
+            app.station.changed = true;
         }
         _ => {}
     }
@@ -115,7 +115,7 @@ fn handle_search(app: &mut App, event: &KeyEvent) {
 fn handle_station(app: &mut App, event: &KeyEvent) {
     match event.code {
         KeyCode::Enter => app.update_board(),
-        x => handle_scroll_nav(&mut app.stations, &x)
+        x => handle_scroll_nav(&mut app.station, &x)
     }
 }
 //endregion
