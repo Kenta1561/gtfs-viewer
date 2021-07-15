@@ -20,7 +20,7 @@ mod ui;
 mod db;
 
 //TODO replace later with config field
-const DB_PATH: &str = "scripts/data.db";
+const DB_PATH: &str = "scripts/ice.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
     //DB
@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             build_menu(&mut app, f, &db,root_layout[0]).unwrap();
             build_board(&mut app, f, &db, root_layout[1]);
-            build_trip(&mut app, f, root_layout[2]);
+            build_trip(&mut app, f, &db, root_layout[2]);
         })?;
 
         match read()? {
