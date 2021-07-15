@@ -4,7 +4,7 @@ use chrono::{Duration, Local};
 use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::{Constraint, Rect};
-use tui::style::{Color, Style};
+use tui::style::{Color, Style, Modifier};
 use tui::widgets::{Row, Table};
 
 use crate::db::GTFSDatabase;
@@ -32,8 +32,8 @@ pub fn build_board<B>(
             s.trip_id.to_string(),
             s.short_name.to_string(),
             s.headsign.to_string(),
-            s.tmp_get_adjusted_arrival(&app.selected_dt.naive_local()),
-            s.tmp_get_adjusted_departure(&app.selected_dt.naive_local()),
+            s.get_adjusted_arr(&app.selected_dt.naive_local()),
+            s.get_adjusted_dep(&app.selected_dt.naive_local()),
         ]))
         .collect();
 
@@ -41,6 +41,7 @@ pub fn build_board<B>(
         .style(Style::default().fg(Color::White))
         .header(
             Row::new(vec!["ID", "Nr.", "Destination", "Arr.", "Dep."])
+                .style(Style::default().add_modifier(Modifier::BOLD))
         )
         .highlight_style(Style::default().fg(Color::Magenta))
         .highlight_symbol(">>")

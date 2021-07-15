@@ -5,7 +5,7 @@ use tui::layout::{Rect, Constraint};
 use crate::ui::{App, get_generic_block, UIBlock};
 use crate::db::GTFSDatabase;
 use tui::widgets::{Row, Table};
-use tui::style::{Style, Color};
+use tui::style::{Style, Color, Modifier};
 use std::error::Error;
 
 pub fn build_trip<B>(
@@ -18,8 +18,8 @@ pub fn build_trip<B>(
     let rows: Vec<Row> = app.trip.widget.items.iter()
         .map(|s| Row::new(vec![
             s.headsign.to_string(),
-            s.tmp_get_adjusted_arrival(&app.selected_dt.naive_local()),
-            s.tmp_get_adjusted_departure(&app.selected_dt.naive_local()),
+            s.get_adjusted_arr(&app.selected_dt.naive_local()),
+            s.get_adjusted_dep(&app.selected_dt.naive_local()),
         ]))
         .collect();
 
@@ -27,14 +27,15 @@ pub fn build_trip<B>(
         .style(Style::default().fg(Color::White))
         .header(
             Row::new(vec!["Station", "Arr.", "Dep."])
+                .style(Style::default().add_modifier(Modifier::BOLD))
         )
         .highlight_style(Style::default().fg(Color::Magenta))
         .highlight_symbol(">>")
         .block(get_generic_block(app, UIBlock::TRIP, Some("Trip details")))
         .widths(&[
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
+            Constraint::Percentage(70),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
         ]);
 
     frame.render_stateful_widget(table, area, &mut app.trip.widget.state);
