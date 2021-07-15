@@ -4,6 +4,8 @@ use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
 use crate::db::types::BoardType::{ARRIVAL, DEPARTURE};
 use crate::db::types::ExceptionType::{ADDED, NONE, REMOVED};
 
+const TIME_FORMAT: &str = "%H:%M";
+
 //region Simple types
 pub struct Station {
     pub stop_id: String,
@@ -100,13 +102,13 @@ impl Stop {
     }
 
     //todo remove later
-    pub fn tmp_get_adjusted_arrival(&self, base_dt: &NaiveDateTime) -> String {
-        self.get_adjusted_dt(&ARRIVAL, base_dt).format("%H:%M:%S").to_string()
+    pub fn get_adjusted_arr(&self, base_dt: &NaiveDateTime) -> String {
+        self.get_adjusted_dt(&ARRIVAL, base_dt).format(TIME_FORMAT).to_string()
     }
 
     //todo remove later
-    pub fn tmp_get_adjusted_departure(&self, base_dt: &NaiveDateTime) -> String {
-        self.get_adjusted_dt(&DEPARTURE, base_dt).format("%H:%M:%S").to_string()
+    pub fn get_adjusted_dep(&self, base_dt: &NaiveDateTime) -> String {
+        self.get_adjusted_dt(&DEPARTURE, base_dt).format(TIME_FORMAT).to_string()
     }
 
     fn get_time_duration(&self, board_type: &BoardType) -> Duration {
