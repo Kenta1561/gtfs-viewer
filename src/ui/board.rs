@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use chrono::{Duration, Local};
 use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::{Constraint, Rect};
@@ -8,7 +7,7 @@ use tui::style::{Color, Style, Modifier};
 use tui::widgets::{Row, Table};
 
 use crate::db::GTFSDatabase;
-use crate::db::types::{Stop, BoardType};
+use crate::db::types::BoardType;
 use crate::ui::{App, get_generic_block, UIBlock};
 
 pub fn build_board<B>(
