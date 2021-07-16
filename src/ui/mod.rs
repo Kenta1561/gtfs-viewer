@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, ListState, Row, TableState};
+use tui::widgets::{Block, Borders, ListState, TableState};
 
 use crate::db::types::{Station, Stop};
 use crate::ui::UIBlock::*;
@@ -131,14 +131,6 @@ impl<T, S: ViewState> StatefulView<T, S> {
     fn set_items(&mut self, items: Vec<T>) {
         self.items = items;
         self.state = S::default();
-    }
-
-    fn get_selected_item(&self) -> Option<&T> {
-        if let Some(i) = self.state.selected() {
-            self.items.get(i)
-        } else {
-            None
-        }
     }
 
     //region Navigation

@@ -48,8 +48,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .split(f.size());
 
             build_menu(&mut app, f, &db,root_layout[0]).unwrap();
-            build_board(&mut app, f, &db, root_layout[1]);
-            build_trip(&mut app, f, &db, root_layout[2]);
+            build_board(&mut app, f, &db, root_layout[1]).unwrap();
+            build_trip(&mut app, f, &db, root_layout[2]).unwrap();
         })?;
 
         match read()? {
