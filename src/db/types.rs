@@ -6,10 +6,94 @@ use crate::db::types::ExceptionType::{ADDED, NONE, REMOVED};
 
 const TIME_FORMAT: &str = "%H:%M";
 
-//region Simple types
+pub trait WidgetItem<T> {
+    fn to_val(&self) -> T;
+}
+
+//region Station
 pub struct Station {
     pub stop_id: String,
     pub name: String,
+}
+
+impl WidgetItem<String> for Station {
+    fn to_val(&self) -> String {
+        self.stop_id.to_string()
+    }
+}
+//endregion
+
+//region Stop
+pub struct DisplayStop {
+    pub arr_time: String,
+    pub dep_time: String,
+    pub trip_id: u32,
+    pub short_name: String,
+    pub head_sign: String,
+}
+
+impl DisplayStop {
+    pub fn from(s: Stop, dt: NaiveDateTime) -> Self {
+        Self {
+            arr_time: s.get_adjusted_arr(&dt),
+            dep_time: s.get_adjusted_dep(&dt),
+            trip_id: s.trip_id,
+            short_name: s.short_name,
+            head_sign: s.head_sign,
+        }
+    }
+}
+
+impl WidgetItem<u32> for DisplayStop {
+    fn to_val(&self) -> u32 {
+        self.trip_id
+    }
+}
+
+pub struct Stop {
+    pub arrival_time: Duration,
+    pub departure_time: Duration,
+    pub trip_id: u32,
+    //tmp
+    pub short_name: String,
+    pub service_id: u16,
+    pub head_sign: String,
+}
+
+impl Stop {
+    pub fn is_after_adjusted_time(
+        &self, board_type: &BoardType, date_time: &NaiveDateTime
+    ) -> bool {
+        &self.get_adjusted_dt(board_type, date_time) > date_time
+    }
+
+    pub fn get_adjusted_dt(
+        &self,
+        board_type: &BoardType,
+        base_dt: &NaiveDateTime
+    ) -> NaiveDateTime {
+        let dur_raw = self.get_time_duration(board_type);
+        let dur_adjusted = dur_raw - Duration::days(dur_raw.num_days());
+
+        base_dt.date().and_hms(0, 0, 0) + dur_adjusted
+    }
+
+    //todo remove later
+    pub fn get_adjusted_arr(&self, base_dt: &NaiveDateTime) -> String {
+        self.get_adjusted_dt(&ARRIVAL, base_dt).format(TIME_FORMAT).to_string()
+    }
+
+    //todo remove later
+    pub fn get_adjusted_dep(&self, base_dt: &NaiveDateTime) -> String {
+        self.get_adjusted_dt(&DEPARTURE, base_dt).format(TIME_FORMAT).to_string()
+    }
+
+    fn get_time_duration(&self, board_type: &BoardType) -> Duration {
+        match board_type {
+            ARRIVAL => self.arrival_time,
+            DEPARTURE => self.departure_time,
+        }
+    }
 }
 //endregion
 
@@ -71,53 +155,6 @@ pub struct ServiceException {
     pub exception_date: NaiveDate,
     pub exception_type: u8,
 }
-//endregion
-
-pub struct Stop {
-    pub arrival_time: Duration,
-    pub departure_time: Duration,
-    pub trip_id: u32,
-    //tmp
-    pub short_name: String,
-    pub service_id: u16,
-    pub headsign: String,
-}
-
-impl Stop {
-    pub fn is_after_adjusted_time(
-        &self, board_type: &BoardType, date_time: &NaiveDateTime
-    ) -> bool {
-        &self.get_adjusted_dt(board_type, date_time) > date_time
-    }
-
-    pub fn get_adjusted_dt(
-        &self,
-        board_type: &BoardType,
-        base_dt: &NaiveDateTime
-    ) -> NaiveDateTime {
-        let dur_raw = self.get_time_duration(board_type);
-        let dur_adjusted = dur_raw - Duration::days(dur_raw.num_days());
-
-        base_dt.date().and_hms(0, 0, 0) + dur_adjusted
-    }
-
-    //todo remove later
-    pub fn get_adjusted_arr(&self, base_dt: &NaiveDateTime) -> String {
-        self.get_adjusted_dt(&ARRIVAL, base_dt).format(TIME_FORMAT).to_string()
-    }
-
-    //todo remove later
-    pub fn get_adjusted_dep(&self, base_dt: &NaiveDateTime) -> String {
-        self.get_adjusted_dt(&DEPARTURE, base_dt).format(TIME_FORMAT).to_string()
-    }
-
-    fn get_time_duration(&self, board_type: &BoardType) -> Duration {
-        match board_type {
-            ARRIVAL => self.arrival_time,
-            DEPARTURE => self.departure_time,
-        }
-    }
-}
 
 impl Service {
     pub fn new(
@@ -158,6 +195,4 @@ impl Service {
     }
 
 }
-
-
-
+//endregion
