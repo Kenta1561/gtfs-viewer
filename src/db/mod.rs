@@ -118,7 +118,7 @@ impl GTFSDatabase {
             trip_id: row.get(2)?,
             short_name: row.get(4)?,
             service_id: row.get(3)?,
-            headsign: row.get(5)?,
+            head_sign: row.get(5)?,
         })
     }
 }

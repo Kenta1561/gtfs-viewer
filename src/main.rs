@@ -9,18 +9,15 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::Terminal;
 
 use crate::db::GTFSDatabase;
-use crate::handler::handle_key_event;
+use crate::handler::KeyHandler;
 use crate::ui::App;
-use crate::ui::board::build_board;
-use crate::ui::menu::build_menu;
-use crate::ui::trip::build_trip;
 
 mod handler;
 mod ui;
 mod db;
 
 //TODO replace later with config field
-const DB_PATH: &str = "scripts/ice.db";
+const DB_PATH: &str = "scripts/data.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
     //DB
@@ -43,23 +40,25 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .constraints(vec![
                     Constraint::Percentage(20),
                     Constraint::Percentage(50),
-                    Constraint::Percentage(30),
+                    // Constraint::Percentage(30),
                 ])
                 .split(f.size());
 
-            build_menu(&mut app, f, &db,root_layout[0]).unwrap();
-            build_board(&mut app, f, &db, root_layout[1]).unwrap();
-            build_trip(&mut app, f, &db, root_layout[2]).unwrap();
+            app.render(f, root_layout.as_slice()).unwrap();
         })?;
 
         match read()? {
             Event::Key(e) => match e.code {
+                //These events should override block-specific ones
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
                     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
                     break;
-                }
-                _ => handle_key_event(&mut app, &e),
+                },
+                KeyCode::Esc => {
+                    app.block_focused = None;
+                },
+                _ => app.key_handler().handle_key(&e)
             },
             _ => {},
         }
