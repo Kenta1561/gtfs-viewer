@@ -17,7 +17,7 @@ mod ui;
 mod db;
 
 //TODO replace later with config field
-const DB_PATH: &str = "scripts/data.db";
+const DB_PATH: &str = "scripts/ice.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
     //DB
@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new();
+    let mut app = App::new(db);
 
     loop {
         terminal.draw(|f| {

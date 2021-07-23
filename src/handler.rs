@@ -25,6 +25,12 @@ pub fn scroll_nav<T, K, S>(data: &mut WidgetData<T, K, S>, code: &KeyCode)
         KeyCode::End => {
             data.end();
         },
+        KeyCode::Enter => {
+            if let Some(x) = data.get_selected_item() {
+                data.key = x.to_val();
+                data.changed = true;
+            }
+        },
         _ => {},
     }
 }
