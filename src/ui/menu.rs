@@ -136,9 +136,9 @@ impl<'a> UIBlock<Paragraph<'a>> for TimeSelection {
 
 //region Search
 pub struct Search {
-    input: String,
+    pub input: String,
     //todo deviates from standard location for changed bool
-    changed: bool,
+    pub changed: bool,
 }
 
 impl Default for Search {

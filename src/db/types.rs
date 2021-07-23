@@ -33,13 +33,13 @@ pub struct DisplayStop {
 }
 
 impl DisplayStop {
-    pub fn from(s: Stop, dt: NaiveDateTime) -> Self {
+    pub fn from(s: &Stop, dt: NaiveDateTime) -> Self {
         Self {
             arr_time: s.get_adjusted_arr(&dt),
             dep_time: s.get_adjusted_dep(&dt),
             trip_id: s.trip_id,
-            short_name: s.short_name,
-            head_sign: s.head_sign,
+            short_name: s.short_name.to_string(),
+            head_sign: s.head_sign.to_string(),
         }
     }
 }

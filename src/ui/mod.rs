@@ -8,13 +8,14 @@ use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, ListState, TableState, Widget};
 
-use crate::db::types::{Station, Stop, WidgetItem};
+use crate::db::types::{Station, Stop, WidgetItem, BoardType, DisplayStop};
 use crate::ui::board::Board;
 use crate::ui::menu::{DateSelection, Search, StationList, TimeSelection};
 use crate::ui::SelectableBlock::*;
 use crate::handler::KeyHandler;
 use crate::ui::trip::Trip;
 use crossterm::event::{KeyEvent, KeyCode};
+use crate::db::GTFSDatabase;
 
 pub mod menu;
 pub mod board;
@@ -47,6 +48,11 @@ impl<T, K, S> WidgetData<T, K, S>
             changed: true,
             key,
         }
+    }
+
+    pub fn set_items(&mut self, items: Vec<T>) {
+        self.items = items;
+        self.state = S::default();
     }
 
     //todo handle empty list case
@@ -89,7 +95,7 @@ impl<T, K, S> WidgetData<T, K, S>
         self.state.select(Some(self.items.len() - 1));
     }
 
-    fn get_selected_item(&self) -> Option<&T> {
+    pub fn get_selected_item(&self) -> Option<&T> {
         self.state.selected().map_or(None, |i| self.items.get(i))
     }
 
@@ -183,6 +189,7 @@ impl WidgetState for TableState {
 
 //region App
 pub struct App {
+    db: GTFSDatabase,
     //Block
     pub block_hover: SelectableBlock,
     pub block_focused: Option<SelectableBlock>,
@@ -198,8 +205,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> App {
+    pub fn new(db: GTFSDatabase) -> App {
         App {
+            db,
             block_hover: SEARCH,
             block_focused: None,
             search: Search::default(),
@@ -231,8 +239,25 @@ impl App {
     ) -> Result<(), Box<dyn Error>>
         where B: Backend
     {
-        //Data fetching
-        let date_time = self.date_selection.date.and_time(self.time_selection.time);
+        //StationList
+        if self.search.changed {
+            self.station_list.data.set_items(
+                self.db.fetch_stations(&self.search.input)?
+            );
+            self.search.changed = false;
+        }
+
+        //Board
+        if self.station_list.data.changed {
+            let selected_dt = self.date_selection.date.and_time(self.time_selection.time);
+            let stops = self.db.fetch_stops(
+                &self.station_list.data.key,
+                BoardType::DEPARTURE,
+                selected_dt
+            )?.iter().map(|s| DisplayStop::from(s, selected_dt)).collect();
+            self.board.data.set_items(stops);
+            self.station_list.data.changed = false;
+        }
 
         //Left: Menu
         let menu_layout = Layout::default()
@@ -248,7 +273,7 @@ impl App {
         frame.render_widget(
             self.search.build(
                 self.block_hover == SelectableBlock::SEARCH,
-                self.block_focused == Some(SelectableBlock::SEARCH)
+                self.block_focused == Some(SelectableBlock::SEARCH),
             )?,
             menu_layout[0],
         );
@@ -256,7 +281,7 @@ impl App {
         frame.render_widget(
             self.date_selection.build(
                 self.block_hover == SelectableBlock::DATE,
-                self.block_focused == Some(SelectableBlock::DATE)
+                self.block_focused == Some(SelectableBlock::DATE),
             )?,
             menu_layout[2],
         );
@@ -264,7 +289,7 @@ impl App {
         frame.render_widget(
             self.time_selection.build(
                 self.block_hover == SelectableBlock::TIME,
-                self.block_focused == Some(SelectableBlock::TIME)
+                self.block_focused == Some(SelectableBlock::TIME),
             )?,
             menu_layout[3],
         );
@@ -272,9 +297,9 @@ impl App {
         frame.render_stateful_widget(
             self.station_list.build(
                 self.block_hover == SelectableBlock::STATION,
-                self.block_focused == Some(SelectableBlock::STATION)
+                self.block_focused == Some(SelectableBlock::STATION),
             )?,
-            menu_layout[2],
+            menu_layout[1],
             &mut self.station_list.data.state,
         );
 
@@ -282,7 +307,7 @@ impl App {
         frame.render_stateful_widget(
             self.board.build(
                 self.block_hover == SelectableBlock::BOARD,
-                self.block_focused == Some(SelectableBlock::BOARD)
+                self.block_focused == Some(SelectableBlock::BOARD),
             )?,
             layout[1],
             &mut self.board.data.state,
@@ -298,21 +323,21 @@ impl KeyHandler for App {
             //Direction
             KeyCode::Down | KeyCode::Char('j') => {
                 self.block_hover = self.block_hover.next()
-            },
+            }
             KeyCode::Up | KeyCode::Char('k') => {
                 self.block_hover = self.block_hover.prev();
-            },
+            }
             KeyCode::Left | KeyCode::Char('h') => {
                 self.block_hover = self.block_hover.left();
-            },
+            }
             KeyCode::Right | KeyCode::Char('l') => {
                 self.block_hover = self.block_hover.right();
-            },
+            }
             //Selection
             KeyCode::Enter => {
                 self.block_focused = Some(self.block_hover);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
