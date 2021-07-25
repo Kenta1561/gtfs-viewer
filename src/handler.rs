@@ -13,10 +13,10 @@ pub fn scroll_nav<T, K, S>(data: &mut WidgetData<T, K, S>, code: &KeyCode)
     where T: WidgetItem<K>, S: WidgetState
 {
     match code {
-        KeyCode::Char('j') => {
+        KeyCode::Char('j') | KeyCode::Down => {
             data.next();
         },
-        KeyCode::Char('k') => {
+        KeyCode::Char('k') | KeyCode::Up => {
             data.prev();
         },
         KeyCode::Home => {
