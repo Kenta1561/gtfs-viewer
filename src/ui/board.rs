@@ -1,14 +1,11 @@
 use std::error::Error;
 
-use tui::backend::Backend;
-use tui::Frame;
-use tui::layout::{Constraint, Rect};
+use tui::layout::Constraint;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Row, Table, TableState};
 
-use crate::db::GTFSDatabase;
-use crate::db::types::{BoardType, Stop, DisplayStop};
-use crate::ui::{App, create_block, SelectableBlock, UIBlock, WidgetData};
+use crate::db::types::DisplayStop;
+use crate::ui::{create_block, UIBlock, WidgetData};
 use crate::handler::{KeyHandler, scroll_nav};
 use crossterm::event::KeyEvent;
 

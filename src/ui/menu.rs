@@ -1,17 +1,13 @@
-use std::borrow::Borrow;
 use std::error::Error;
 
-use chrono::{Date, DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Duration};
-use tui::backend::Backend;
-use tui::Frame;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use chrono::{Local, NaiveDate, NaiveTime, Duration};
+use tui::layout::Alignment;
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
-use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
+use tui::widgets::{List, ListItem, ListState, Paragraph};
 
-use crate::db::GTFSDatabase;
 use crate::db::types::Station;
-use crate::ui::{App, create_block, SelectableBlock, UIBlock, WidgetData};
+use crate::ui::{create_block, UIBlock, WidgetData};
 use crate::handler::{KeyHandler, scroll_nav};
 use crossterm::event::{KeyCode, KeyModifiers, KeyEvent};
 
