@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::time::Instant;
 
 use chrono::{Duration, NaiveDateTime};
 use regex::Regex;
@@ -128,9 +127,8 @@ impl GTFSDatabase {
 pub fn fetch_services(db: &Connection) -> Result<HashMap<u16, Service>, Box<dyn Error>> {
     let mut stmt = db.prepare(SERVICE_QUERY)?;
 
-    let query_time = Instant::now();
     let mut rows = stmt.query([])?;
-    println!("Query: {} ms", query_time.elapsed().as_millis());
+    println!("Mapping services...");
 
     let mut map: HashMap<u16, Service> = HashMap::new();
 

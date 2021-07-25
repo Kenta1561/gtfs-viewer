@@ -1,19 +1,16 @@
 use std::error::Error;
 
-use tui::backend::Backend;
-use tui::Frame;
-use tui::layout::{Constraint, Rect};
+use tui::layout::Constraint;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Row, Table, TableState};
 
-use crate::db::GTFSDatabase;
-use crate::db::types::{Stop, DisplayStop};
-use crate::ui::{App, SelectableBlock, UIBlock, WidgetData, create_block};
-use crate::handler::KeyHandler;
+use crate::db::types::DisplayStop;
+use crate::ui::{UIBlock, WidgetData, create_block};
+use crate::handler::{KeyHandler, scroll_nav};
 use crossterm::event::KeyEvent;
 
 pub struct Trip {
-    data: WidgetData<DisplayStop, u32, TableState>,
+    pub data: WidgetData<DisplayStop, u32, TableState>,
 }
 
 impl Default for Trip {
@@ -26,7 +23,7 @@ impl Default for Trip {
 
 impl KeyHandler for Trip {
     fn handle_key(&mut self, event: &KeyEvent) {
-        unimplemented!()
+        scroll_nav(&mut self.data, &event.code);
     }
 }
 

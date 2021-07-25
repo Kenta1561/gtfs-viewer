@@ -1,14 +1,12 @@
 use std::error::Error;
 
-use chrono::{DateTime, Local};
-use rusqlite::ffi::ErrorCode::ConstraintViolation;
 use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, ListState, TableState, Widget};
 
-use crate::db::types::{Station, Stop, WidgetItem, BoardType, DisplayStop};
+use crate::db::types::{WidgetItem, BoardType, DisplayStop};
 use crate::ui::board::Board;
 use crate::ui::menu::{DateSelection, Search, StationList, TimeSelection};
 use crate::ui::SelectableBlock::*;
@@ -247,9 +245,10 @@ impl App {
             self.search.changed = false;
         }
 
+        let selected_dt = self.date_selection.date.and_time(self.time_selection.time);
+
         //Board
         if self.station_list.data.changed {
-            let selected_dt = self.date_selection.date.and_time(self.time_selection.time);
             let stops = self.db.fetch_stops(
                 &self.station_list.data.key,
                 BoardType::DEPARTURE,
@@ -257,6 +256,13 @@ impl App {
             )?.iter().map(|s| DisplayStop::from(s, selected_dt)).collect();
             self.board.data.set_items(stops);
             self.station_list.data.changed = false;
+        }
+
+        if self.board.data.changed {
+            let stops = self.db.fetch_trip(self.board.data.key)?.iter()
+                .map(|s| DisplayStop::from(s, selected_dt)).collect();
+            self.trip.data.set_items(stops);
+            self.board.data.changed = false;
         }
 
         //Left: Menu
@@ -311,6 +317,16 @@ impl App {
             )?,
             layout[1],
             &mut self.board.data.state,
+        );
+
+        //Right: Trip
+        frame.render_stateful_widget(
+            self.trip.build(
+                self.block_hover == SelectableBlock::TRIP,
+                self.block_focused == Some(SelectableBlock::TRIP)
+            )?,
+            layout[2],
+            &mut self.trip.data.state,
         );
 
         Ok(())

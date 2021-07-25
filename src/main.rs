@@ -8,22 +8,21 @@ use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Terminal;
 
-use crate::db::GTFSDatabase;
-use crate::handler::KeyHandler;
 use crate::ui::App;
+use crate::db::GTFSDatabase;
 
 mod handler;
 mod ui;
 mod db;
 
-//TODO replace later with config field
-const DB_PATH: &str = "scripts/ice.db";
+// TODO replace later with config field
+const DB_PATH: &str = "scripts/data.db";
 
 fn main() -> Result<(), Box<dyn Error>> {
-    //DB
+    // DB
     let db = GTFSDatabase::new(DB_PATH)?;
 
-    //UI
+    // UI
     let mut stdout = stdout();
     enable_raw_mode()?;
     execute!(stdout, EnterAlternateScreen)?;
@@ -40,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .constraints(vec![
                     Constraint::Percentage(20),
                     Constraint::Percentage(50),
-                    // Constraint::Percentage(30),
+                    Constraint::Percentage(30),
                 ])
                 .split(f.size());
 
